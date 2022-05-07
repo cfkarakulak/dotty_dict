@@ -89,10 +89,7 @@ class Dotty:
             if it.isdigit():
                 idx = int(it)
                 if idx < len(data):
-                    if items:
-                        return search_in(items, data[idx])
-                    else:
-                        return data[idx]
+                    return search_in(items, data[idx]) if items else data[idx]
                 else:
                     return False
 
@@ -118,7 +115,7 @@ class Dotty:
         :return: Converted or unchanged item
         :rtype: any type
         """
-        data_types = set([type(i) for i in data.keys()])
+        data_types = {type(i) for i in data.keys()}
         for t in data_types:
             try:
                 if t(item) in data:
@@ -153,10 +150,7 @@ class Dotty:
                 data = data[it]
             except TypeError:
                 raise KeyError("List index must be an integer, got {}".format(it))
-            if items:
-                return get_from(items, data)
-            else:
-                return data
+            return get_from(items, data) if items else data
 
         return get_from(self._split(item), self._data)
 
@@ -170,11 +164,7 @@ class Dotty:
             it = items.pop(0)
             if items:
 
-                if items[0].isdigit():
-                    next_item = []
-                else:
-                    next_item = {}
-
+                next_item = [] if items[0].isdigit() else {}
                 if it.isdigit():
                     it = int(it)
                     try:
@@ -182,17 +172,13 @@ class Dotty:
                             data[it] = next_item
                     except IndexError:
                         self.set_list_index(data, it, next_item)
-                    set_to(items, data[it])
-                else:
-                    if not data.get(it):
-                        data[it] = next_item
-                    set_to(items, data[it])
-
+                elif not data.get(it):
+                    data[it] = next_item
+                set_to(items, data[it])
+            elif it.isdigit():
+                self.set_list_index(data, it, value)
             else:
-                if it.isdigit():
-                    self.set_list_index(data, it, value)
-                else:
-                    data[it] = value
+                data[it] = value
 
         set_to(self._split(key), self._data)
 
@@ -207,8 +193,7 @@ class Dotty:
         """
         for _ in range(len(data), int(index) + 1):
             data.append(None)
-        else:
-            data[int(index)] = value
+        data[int(index)] = value
 
     def __delitem__(self, key):
         def del_key(items, data):
@@ -278,11 +263,10 @@ class Dotty:
             it = items.pop(0)
             if it not in data:
                 return default
-            if items:
-                data = data[it]
-                return pop_from(items, data)
-            else:
+            if not items:
                 return data.pop(it, default)
+            data = data[it]
+            return pop_from(items, data)
 
         return pop_from(self._split(key), self._data)
 
@@ -333,7 +317,7 @@ class Dotty:
         if not isinstance(key, str):
             return [key]
         esc_stamp = (self.esc_char + self.separator, '<#esc#>')
-        skp_stamp = ('\\' + self.esc_char + self.separator, '<#skp#>' + self.separator)
+        skp_stamp = '\\' + self.esc_char + self.separator, f'<#skp#>{self.separator}'
 
         stamp_esc = ('<#esc#>', self.separator)
         stamp_skp = ('<#skp#>', self.esc_char)
